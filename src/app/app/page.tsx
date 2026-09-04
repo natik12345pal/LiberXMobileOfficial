@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useAppStore } from '@/stores/app-store';
+import { usePersistence } from '@/hooks/use-persistence';
 import StartCenter from '@/components/liberxoffice/start-center';
 import WriterApp from '@/components/liberxoffice/writer/writer-app';
 import CalcApp from '@/components/liberxoffice/calc/calc-app';
@@ -12,6 +13,9 @@ import FilterDialog from '@/components/liberxoffice/dialogs/filter-dialog';
 
 export default function AppPage() {
   const { currentView, goBack, darkMode } = useAppStore();
+
+  // ★ Mount persistence ONCE — restores + auto-saves all user data
+  usePersistence();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

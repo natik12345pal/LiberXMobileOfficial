@@ -3,6 +3,7 @@
 import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react';
 import { useAppStore } from '@/stores/app-store';
 import { openImageFile, downloadHTML, downloadTXT, openFile, autoSave, loadAutoSave, clearAutoSave, printDocument, downloadDOCX, openDOCXFile } from '@/lib/file-service';
+import { persist, load } from '@/lib/persistence';
 import MenuBar from '../shared/menu-bar';
 import StatusBar from '../shared/status-bar';
 import WriterToolbar from './writer-toolbar';
@@ -632,16 +633,39 @@ export default function WriterApp() {
   // --- Effects ---
   useEffect(() => {
     if (editorRef.current) {
-      const saved = loadAutoSave('writer');
+      // Try new persistence system first, fall back to old
+      const savedNew = load<string>('writer');
+      const savedOld = loadAutoSave('writer');
+      const saved = savedNew ?? savedOld;
       if (saved && !editorRef.current.innerHTML.trim()) editorRef.current.innerHTML = saved;
       else if (!editorRef.current.innerHTML.trim()) editorRef.current.innerHTML = DEFAULT_CONTENT;
       updateCounts();
     }
   }, []);
 
+  // Auto-save Writer content on input (debounced via persistence layer)
   useEffect(() => {
-    const interval = setInterval(() => { if (editorRef.current?.innerHTML) autoSave('writer', editorRef.current.innerHTML); }, 30000);
+    const interval = setInterval(() => {
+      if (editorRef.current?.innerHTML) {
+        persist('writer', editorRef.current.innerHTML);
+        // Also save to old key for backward compat
+        autoSave('writer', editorRef.current.innerHTML);
+      }
+    }, 5000); // Save every 5s (was 30s)
     return () => clearInterval(interval);
+  }, []);
+
+  // Also save on every input (debounced)
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const handleInput = () => {
+      if (editor.innerHTML) {
+        persist('writer', editor.innerHTML);
+      }
+    };
+    editor.addEventListener('input', handleInput);
+    return () => editor.removeEventListener('input', handleInput);
   }, []);
 
   useEffect(() => {

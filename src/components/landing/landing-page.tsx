@@ -257,7 +257,6 @@ export default function LandingPage() {
                   className="absolute inset-0 pointer-events-none"
                   style={{
                     color: '#18A303',
-                    WebkitTextFillColor: '#18A303',
                     background: 'linear-gradient(120deg, #18A303 0%, #4fff3a 30%, #18A303 50%, #4fff3a 70%, #18A303 100%)',
                     backgroundSize: '200% auto',
                     WebkitBackgroundClip: 'text',
