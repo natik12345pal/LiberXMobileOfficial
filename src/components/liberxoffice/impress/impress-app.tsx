@@ -3,7 +3,7 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { useImpressStore } from '@/stores/impress-store';
 import { useAppStore } from '@/stores/app-store';
-import { downloadJSON, openFile, autoSave, loadAutoSave } from '@/lib/file-service';
+import { downloadJSON, downloadPPTX, openFile, autoSave, loadAutoSave } from '@/lib/file-service';
 import MenuBar from '../shared/menu-bar';
 import StatusBar from '../shared/status-bar';
 import ImpressToolbar from './impress-toolbar';
@@ -293,8 +293,13 @@ export default function ImpressApp() {
       {/* Dialogs */}
       <SlideMasterDialog />
       <DuplicateSlideDialog />
-      <SaveAsDialog open={showSaveAsDialog} onClose={toggleSaveAsDialog} onSave={(name) => {
-        downloadJSON(name, useImpressStore.getState().slides);
+      <SaveAsDialog open={showSaveAsDialog} appType="impress" onClose={toggleSaveAsDialog} onSave={async (name, format) => {
+        const slides = useImpressStore.getState().slides;
+        if (format === 'pptx') {
+          await downloadPPTX(name, slides);
+        } else {
+          downloadJSON(name, slides);
+        }
         setModified(false);
       }} />
 

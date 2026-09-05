@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useCalcStore } from '@/stores/calc-store';
 import { useAppStore } from '@/stores/app-store';
-import { downloadJSON, openFile, autoSave, loadAutoSave, clearAutoSave, printDocument, openXLSXFile } from '@/lib/file-service';
+import { downloadJSON, downloadCSV, downloadXLSX, openFile, autoSave, loadAutoSave, clearAutoSave, printDocument, openXLSXFile } from '@/lib/file-service';
 import MenuBar from '../shared/menu-bar';
 import StatusBar from '../shared/status-bar';
 import CalcToolbar from './calc-toolbar';
@@ -206,8 +206,27 @@ export default function CalcApp() {
       <CellBorderDialog open={showCellBorderDialog} onClose={toggleCellBorderDialog} />
       <TextToColumnsDialog open={showTextToColumnsDialog} onClose={toggleTextToColumnsDialog} />
       <GoalSeekDialog open={showGoalSeekDialog} onClose={toggleGoalSeekDialog} />
-      <SaveAsDialog open={showSaveAsDialog} onClose={toggleSaveAsDialog} onSave={(name) => {
-        downloadJSON(name, useCalcStore.getState().sheets);
+      <SaveAsDialog open={showSaveAsDialog} appType="calc" onClose={toggleSaveAsDialog} onSave={async (name, format) => {
+        const sheets = useCalcStore.getState().sheets;
+        if (format === 'xlsx') {
+          await downloadXLSX(name, sheets);
+        } else if (format === 'csv') {
+          // Export active sheet as CSV
+          const sheet = sheets[useCalcStore.getState().activeSheet] || {};
+          const rows: string[] = [];
+          const COLS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+          for (let r = 1; r <= 50; r++) {
+            const cols: string[] = [];
+            for (const c of COLS) {
+              const val = sheet[`${c}${r}`]?.computed || '';
+              cols.push(val.includes(',') || val.includes('"') || val.includes('\n') ? `"${val.replace(/"/g, '""')}"` : val);
+            }
+            rows.push(cols.join(','));
+          }
+          downloadCSV(name, rows.join('\n'));
+        } else {
+          downloadJSON(name, sheets);
+        }
         setModified(false);
       }} />
     </div>

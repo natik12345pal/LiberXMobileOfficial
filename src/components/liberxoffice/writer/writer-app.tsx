@@ -360,10 +360,8 @@ export default function WriterApp() {
   }
 
   function handleSave() {
-    if (!editorRef.current) return;
-    downloadHTML(fileName, editorRef.current.innerHTML);
-    clearAutoSave('writer');
-    setModified(false);
+    // Open Save As dialog so user can choose format (.docx, .html, .txt)
+    toggleSaveAsDialog();
   }
 
   function handleTableInsert(rows: number, cols: number, header: boolean) {
@@ -1082,8 +1080,17 @@ export default function WriterApp() {
         </div>
       )}
 
-      <SaveAsDialog open={showSaveAsDialog} onClose={toggleSaveAsDialog} onSave={(name) => {
-        if (editorRef.current) downloadHTML(name, editorRef.current.innerHTML);
+      <SaveAsDialog open={showSaveAsDialog} appType="writer" onClose={toggleSaveAsDialog} onSave={async (name, format) => {
+        if (!editorRef.current) return;
+        const html = editorRef.current.innerHTML;
+        if (format === 'docx') {
+          await downloadDOCX(name, html);
+        } else if (format === 'txt') {
+          downloadTXT(name, editorRef.current.innerText);
+        } else {
+          // html
+          downloadHTML(name, html);
+        }
         setModified(false);
       }} />
       <SpellCheckDialog open={showSpellCheckDialog} onClose={() => setShowSpellCheckDialog(false)} editorRef={editorRef} />

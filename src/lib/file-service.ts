@@ -132,11 +132,14 @@ async function extractInlineRuns(el: HTMLElement, docxModule: Record<string, any
         props.subScript = true;
       }
       if (node.style.color) {
-        const c = node.style.color.replace(/rgb\(|\)/g, '').split(',').map(s => parseInt(s.trim()));
-        if (c.length === 3) {
-          props.color = docxModule.RgbColor.fromHex('#' + c.map(n => n.toString(16).padStart(2, '0')).join(''));
-        } else {
-          props.color = node.style.color.startsWith('#') ? docxModule.RgbColor.fromHex(node.style.color) : undefined;
+        // Convert rgb(r, g, b) or #hex to a plain hex string (without #)
+        // The docx package accepts color as a hex string directly
+        const rgbMatch = node.style.color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+        if (rgbMatch) {
+          const [, r, g, b] = rgbMatch;
+          props.color = [r, g, b].map(n => parseInt(n).toString(16).padStart(2, '0')).join('').toUpperCase();
+        } else if (node.style.color.startsWith('#')) {
+          props.color = node.style.color.slice(1).toUpperCase();
         }
       }
       if (node.style.fontSize) {
